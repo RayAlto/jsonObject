@@ -2,27 +2,25 @@
 #ifndef __JSONOBJECT_HPP__
 #define __JSONOBJECT_HPP__
 
-#include <cctype>
-#include <cstdint>
+#include <cstddef>
 #include <fstream>
 #include <string>
 #include <sstream>
 #include <list>
 
-class JsonObject;
-
-enum class ObjType : uint8_t { ERROR, INT, BOOL, STR, DOUBLE, NUL, LIST, DICT };
-
-union ObjPtr {
-    int* _int;
-    bool* _bool;
-    double* _double;
-    std::string* _str;
-    std::list<JsonObject*>* _list;
-    std::list<std::pair<JsonObject*, JsonObject*>>* _dict;
-};
-
 class JsonObject {
+private:
+    enum class ObjType : uint8_t { ERROR, INT, BOOL, STR, DOUBLE, NUL, LIST, DICT };
+
+    union ObjPtr {
+        int* _int;
+        bool* _bool;
+        double* _double;
+        std::string* _str;
+        std::list<JsonObject*>* _list;
+        std::list<std::pair<JsonObject*, JsonObject*>>* _dict;
+    };
+
 private:
     ObjType _type = ObjType::ERROR;
     ObjPtr _ptr;
@@ -31,6 +29,7 @@ protected:
     static inline std::size_t countDigit(const std::string&, std::size_t);
     static inline std::size_t countCharacter(const std::string&, std::size_t);
     static inline char parseEscapeCharacter(const char&);
+    static inline std::string unicodeToU8String(const std::string&);
     bool parse(const std::string&, std::size_t&);
     static bool parseNumber(JsonObject*, const std::string&, std::size_t&);
     static bool parseEtc(JsonObject*, const std::string&, std::size_t&);

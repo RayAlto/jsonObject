@@ -47,6 +47,15 @@ char JsonObject::parseEscapeCharacter(const char& character) {
     }
 }
 
+std::string JsonObject::unicodeToU8String(const std::string& unicodeDigits) {
+    int order = std::stoi(unicodeDigits, 0, 16);
+    std::stringstream u8StringStream;
+    u8StringStream << char((((order & 61440) >> 12) | 224) - 256);
+    u8StringStream << char((((order & 4032) >> 6) | 128) - 256);
+    u8StringStream << char(((order & 63) | 128) - 256);
+    return u8StringStream.str();
+}
+
 bool JsonObject::parse(const std::string& jsonText, std::size_t& startPosition) {
     clear();
     startPosition = jsonText.find_first_not_of(" \r\n\t", startPosition);
@@ -121,8 +130,10 @@ bool JsonObject::parseString(JsonObject* jsonObject, const std::string& jsonText
     while (jsonText[startPosition] != '"') {
         if (jsonText[startPosition] == '\\') {
             startPosition++;
-            if (jsonText[startPosition] == 'u') // It is an Unicode Character
+            if (jsonText[startPosition] == 'u') { // It is an Unicode Character
+                parsedString << unicodeToU8String(jsonText.substr(startPosition + 1, 4));
                 startPosition += 4;
+            }
             else
                 parsedString << parseEscapeCharacter(jsonText[startPosition]);
         }
@@ -144,6 +155,13 @@ bool JsonObject::parseList(JsonObject* jsonObject, const std::string& jsonText, 
         startPosition++;
     startPosition = jsonText.find_first_not_of(" \r\n\t", startPosition);
     while (jsonText[startPosition] != ']') {
+        JsonObject* newItem = new JsonObject();
+        newItem->parse(jsonText, startPosition);
+        startPosition = jsonText.find_first_not_of(" \r\n\t", startPosition);
+        if (jsonText[startPosition] == ',')
+            startPosition++;
+        else
+            break;
     }
     startPosition++;
     return true;
@@ -453,6 +471,62 @@ JsonObject& JsonObject::load(const std::string& jsonFile) {
         jsonTextStringStream << jsonTextTemp;
     }
     return *(new JsonObject(jsonTextStringStream.str()));
+}
+
+std::string JsonObject::dumps(const JsonObject& jsonObject) {
+    std::stringstream jsonStringStream;
+    switch (jsonObject._type) {
+    case ObjType::INT:
+        jsonStringStream << *jsonObject._ptr._int;
+        break;
+    case ObjType::BOOL:
+        jsonStringStream << *jsonObject._ptr._bool ? "true" : "false";
+        break;
+    case ObjType::STR:
+        jsonStringStream << '"';
+        for (const char& c : *jsonObject._ptr._str) {
+            switch (c) {
+            case '"':
+                jsonStringStream << "\\\"";
+                break;
+            case '\\':
+                jsonStringStream << "\\\\";
+                break;
+            case '\b':
+                jsonStringStream << "\\b";
+                break;
+            case '\f':
+                jsonStringStream << "\\f";
+                break;
+            case '\n':
+                jsonStringStream << "\\n";
+                break;
+            case '\r':
+                jsonStringStream << "\\r";
+                break;
+            case '\t':
+                jsonStringStream << "\\t";
+                break;
+
+            default:
+                jsonStringStream << c;
+                break;
+            }
+        }
+        break;
+    case ObjType::DOUBLE:
+        jsonStringStream << *jsonObject._ptr._double;
+        break;
+    case ObjType::LIST:
+        jsonStringStream << '[';
+    default:
+        break;
+    }
+    return jsonStringStream.str();
+}
+
+bool JsonObject::dump(const std::string& fileName, const JsonObject& jsonObject) {
+    return true;
 }
 
 JsonObject& operator""_json(const char* str, std::size_t len) {
