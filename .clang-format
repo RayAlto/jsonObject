@@ -1,0 +1,35 @@
+BasedOnStyle: Google
+AccessModifierOffset: -4
+AlignConsecutiveMacros: true
+AlignTrailingComments: false
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AlwaysBreakBeforeMultilineStrings: false
+AlwaysBreakTemplateDeclarations: No
+BinPackArguments: false
+BinPackParameters: false
+BraceWrapping:
+  BeforeCatch: true
+  BeforeElse: true
+  IndentBraces: false
+  SplitEmptyRecord: false
+  SplitEmptyNamespace: false
+BreakBeforeBinaryOperators: NonAssignment
+BreakBeforeBraces: Custom
+BreakInheritanceList: AfterColon
+BreakConstructorInitializers: AfterColon
+BreakAfterJavaFieldAnnotations: true
+BreakStringLiterals: false
+ColumnLimit: 180
+IncludeBlocks: Preserve
+IndentCaseLabels: false
+IndentWidth: 4
+ReflowComments: false
+SortIncludes: false
+SortUsingDeclarations: false
+SpaceBeforeCpp11BracedList: true
+SpacesBeforeTrailingComments: 1
+SpacesInContainerLiterals: false
+TabWidth: 4
+UseTab: Never
