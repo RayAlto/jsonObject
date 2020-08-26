@@ -3,7 +3,7 @@
 
 std::size_t JsonObject::countDigit(const std::string& text, std::size_t startPosition = 0) {
     std::size_t count = 0;
-    while (std::isdigit(text[startPosition])) {
+    while (std::isdigit(text[startPosition]) && startPosition < text.size()) {
         count++;
         startPosition++;
     }
@@ -12,7 +12,7 @@ std::size_t JsonObject::countDigit(const std::string& text, std::size_t startPos
 
 std::size_t JsonObject::countCharacter(const std::string& text, std::size_t startPosition = 0) {
     std::size_t count = 0;
-    while (std::isalpha(text[startPosition])) {
+    while (std::isalpha(text[startPosition]) && startPosition < text.size()) {
         count++;
         startPosition++;
     }
@@ -50,9 +50,9 @@ char JsonObject::parseEscapeCharacter(const char& character) {
 std::string JsonObject::unicodeToU8String(const std::string& unicodeDigits) {
     int order = std::stoi(unicodeDigits, 0, 16);
     std::stringstream u8StringStream;
-    u8StringStream << char((((order & 61440) >> 12) | 224) - 256);
-    u8StringStream << char((((order & 4032) >> 6) | 128) - 256);
-    u8StringStream << char(((order & 63) | 128) - 256);
+    u8StringStream << char((((order & 0xF000) >> 12) | 0x00E0) - 256);
+    u8StringStream << char((((order & 0x0FC0) >> 6) | 0x0080) - 256);
+    u8StringStream << char(((order & 0x003F) | 0x0080) - 256);
     return u8StringStream.str();
 }
 
@@ -127,10 +127,14 @@ bool JsonObject::parseString(JsonObject* jsonObject, const std::string& jsonText
     std::stringstream parsedString;
     if (jsonText[startPosition] == '"')
         startPosition++;
-    while (jsonText[startPosition] != '"') {
+    while (jsonText[startPosition] != '"' && startPosition < jsonText.size()) {
         if (jsonText[startPosition] == '\\') {
             startPosition++;
+            if (startPosition >= jsonText.size())
+                break;
             if (jsonText[startPosition] == 'u') { // It is an Unicode Character
+                if (startPosition + 4 >= jsonText.size())
+                    break;
                 parsedString << unicodeToU8String(jsonText.substr(startPosition + 1, 4));
                 startPosition += 4;
             }
@@ -154,14 +158,17 @@ bool JsonObject::parseList(JsonObject* jsonObject, const std::string& jsonText, 
     if (jsonText[startPosition] == '[')
         startPosition++;
     startPosition = jsonText.find_first_not_of(" \r\n\t", startPosition);
-    while (jsonText[startPosition] != ']') {
+    while (jsonText[startPosition] != ']' && startPosition < jsonText.size()) {
         JsonObject* newItem = new JsonObject();
         newItem->parse(jsonText, startPosition);
+        jsonObject->_ptr._list->emplace_back(newItem);
         startPosition = jsonText.find_first_not_of(" \r\n\t", startPosition);
-        if (jsonText[startPosition] == ',')
+        if (jsonText[startPosition] == ',') {
             startPosition++;
-        else
-            break;
+        }
+        else {
+            return false;
+        }
     }
     startPosition++;
     return true;
@@ -417,12 +424,6 @@ std::size_t JsonObject::size() const {
     case ObjType::DICT:
         return _ptr._dict->size();
     }
-    if (_type == ObjType::STR)
-        return _ptr._str->size();
-    else if (_type == ObjType::LIST)
-        return _ptr._list->size();
-    else if (_type == ObjType::DICT)
-        return _ptr._dict->size();
     return 0;
 }
 

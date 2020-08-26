@@ -6,8 +6,9 @@ int main(int argc, char const* argv[]) {
     // std::string testString = R"+*+*( true )+*+*";
     // std::cout << "testString: " << testString << std::endl;
     // JsonObject a = JsonObject::loads(testString);
-    JsonObject a = "\"\\u662f\""_json;
+    JsonObject a = "\"\\ur\""_json;
     std::cout << a.type() << std::endl;
-    std::cout << a.toString() << std::endl;
+    std::cout << a.size() << std::endl;
+
     return 0;
 }
