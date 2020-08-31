@@ -54,10 +54,6 @@ public:
     bool& getBool();
     std::string& getString();
     double& getDouble();
-    operator int() const;
-    operator bool() const;
-    operator std::string() const;
-    operator double() const;
     int& operator=(const int&);
     bool& operator=(const bool&);
     std::string& operator=(const std::string&);

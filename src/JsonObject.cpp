@@ -177,6 +177,34 @@ bool JsonObject::parseList(JsonObject* jsonObject, const std::string& jsonText, 
 bool JsonObject::parseDict(JsonObject* jsonObject, const std::string& jsonText, std::size_t& startPosition) {
     jsonObject->_type = ObjType::DICT;
     jsonObject->_ptr._dict = new std::list<std::pair<JsonObject*, JsonObject*>>();
+    if (jsonText[startPosition] == '{')
+        startPosition++;
+    startPosition = jsonText.find_first_not_of(" \r\n\t", startPosition);
+    while (jsonText[startPosition] != '}' && startPosition < jsonText.size()) {
+        JsonObject* newItemKey = new JsonObject();
+        JsonObject* newItemValue = new JsonObject();
+        newItemKey->parse(jsonText, startPosition);
+        startPosition = jsonText.find_first_not_of(" \r\n\t", startPosition);
+        if (jsonText[startPosition] == ':') {
+            startPosition++;
+            startPosition = jsonText.find_first_not_of(" \r\n\t", startPosition);
+        }
+        else {
+            delete newItemKey;
+            delete newItemValue;
+            return false;
+        }
+        newItemValue->parse(jsonText, startPosition);
+        jsonObject->_ptr._dict->emplace_back(std::pair<JsonObject*, JsonObject*>(newItemKey, newItemValue));
+        startPosition = jsonText.find_first_not_of(" \r\n\t", startPosition);
+        if (jsonText[startPosition] == ',') {
+            startPosition++;
+        }
+        else {
+            return false;
+        }
+    }
+    startPosition++;
     return true;
 }
 
@@ -320,22 +348,6 @@ double& JsonObject::getDouble() {
     return *_ptr._double;
 }
 
-JsonObject::operator int() const {
-    return _type == ObjType::INT ? *_ptr._int : 0;
-}
-
-JsonObject::operator bool() const {
-    return _type == ObjType::BOOL ? *_ptr._bool : false;
-}
-
-JsonObject::operator std::string() const {
-    return _type == ObjType::STR ? *_ptr._str : "";
-}
-
-JsonObject::operator double() const {
-    return _type == ObjType::DOUBLE ? *_ptr._double : 0;
-}
-
 int& JsonObject::operator=(const int& rv) {
     *_ptr._int = rv;
     return *_ptr._int;
@@ -373,6 +385,7 @@ JsonObject& JsonObject::operator[](const int& rv) {
         while (objectPairIterator != _ptr._dict->end()) {
             if (objectPairIterator->first->_type == ObjType::INT && *objectPairIterator->first->_ptr._int == rv)
                 return *(objectPairIterator->second);
+            objectPairIterator++;
         }
         return *this;
     }
@@ -385,6 +398,7 @@ JsonObject& JsonObject::operator[](const double& rv) {
         while (objectPairIterator != _ptr._dict->end()) {
             if (objectPairIterator->first->_type == ObjType::DOUBLE && *objectPairIterator->first->_ptr._double == rv)
                 return *(objectPairIterator->second);
+            objectPairIterator++;
         }
     }
     return *this;
@@ -396,6 +410,7 @@ JsonObject& JsonObject::operator[](const std::string& rv) {
         while (objectPairIterator != _ptr._dict->end()) {
             if (objectPairIterator->first->_type == ObjType::STR && *objectPairIterator->first->_ptr._str == rv)
                 return *(objectPairIterator->second);
+            objectPairIterator++;
         }
     }
     return *this;
