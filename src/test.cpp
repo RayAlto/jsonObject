@@ -1,11 +1,7 @@
 #include "JsonObject.hpp"
 #include <iostream>
-#include <bitset>
 
 int main(int argc, char const* argv[]) {
-    // std::string testString = R"+*+*( true )+*+*";
-    // std::cout << "testString: " << testString << std::endl;
-    // JsonObject a = JsonObject::loads(testString);
     JsonObject a = R"+*+*(
 {
     "widget": {
@@ -37,6 +33,5 @@ int main(int argc, char const* argv[]) {
 }
 )+*+*"_json;
     std::cout << JsonObject::dump("output.json", a, -1, false);
-
     return 0;
 }
