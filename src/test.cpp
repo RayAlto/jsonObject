@@ -36,9 +36,7 @@ int main(int argc, char const* argv[]) {
     }
 }
 )+*+*"_json;
-    std::cout << a.type() << std::endl;
-    std::cout << a.size() << std::endl;
-    std::cout << (a["widget"]["window"]["height"]).toInt() << std::endl;
+    std::cout << JsonObject::dump("output.json", a, -1, false);
 
     return 0;
 }

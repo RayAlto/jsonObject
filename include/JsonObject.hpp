@@ -26,6 +26,7 @@ private:
     ObjPtr _ptr;
 
 protected:
+    static inline void addIndent(std::ostream&, const int&, const int&);
     static inline std::size_t countDigit(const std::string&, std::size_t);
     static inline std::size_t countCharacter(const std::string&, std::size_t);
     static inline char parseEscapeCharacter(const char&);
@@ -36,6 +37,7 @@ protected:
     static bool parseString(JsonObject*, const std::string&, std::size_t&);
     static bool parseList(JsonObject*, const std::string&, std::size_t&);
     static bool parseDict(JsonObject*, const std::string&, std::size_t&);
+    static bool format(const JsonObject&, std::ostream&, int floor, const int& indent, const bool& ensureAscii);
     static JsonObject* generateJsonObject(const int&);
     static JsonObject* generateJsonObject(const double&);
     static JsonObject* generateJsonObject(const std::string&);
@@ -66,8 +68,8 @@ public:
     void clear();
     static JsonObject& loads(const std::string&);
     static JsonObject& load(const std::string&);
-    static std::string dumps(const JsonObject&);
-    static bool dump(const std::string&, const JsonObject&);
+    static std::string dumps(const JsonObject&, int, bool);
+    static bool dump(const std::string&, const JsonObject&, int, bool);
 };
 
 JsonObject& operator""_json(const char*, std::size_t);

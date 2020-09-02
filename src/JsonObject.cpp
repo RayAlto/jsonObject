@@ -1,6 +1,14 @@
 #include "JsonObject.hpp"
 #include <iostream>
 
+void JsonObject::addIndent(std::ostream& jsonStream, const int& floor, const int& indent) {
+    if (indent < 0)
+        return;
+    for (size_t i = 0; i < floor; i++)
+        for (size_t j = 0; j < indent; j++)
+            jsonStream << ' ';
+}
+
 std::size_t JsonObject::countDigit(const std::string& text, std::size_t startPosition = 0) {
     std::size_t count = 0;
     while (std::isdigit(text[startPosition]) && startPosition < text.size()) {
@@ -49,7 +57,7 @@ char JsonObject::parseEscapeCharacter(const char& character) {
 
 std::string JsonObject::unicodeToU8String(const std::string& unicodeDigits) {
     int order = std::stoi(unicodeDigits, 0, 16);
-    std::stringstream u8StringStream;
+    std::ostringstream u8StringStream;
     u8StringStream << char((((order & 0xF000) >> 12) | 0x00E0) - 256);
     u8StringStream << char((((order & 0x0FC0) >> 6) | 0x0080) - 256);
     u8StringStream << char(((order & 0x003F) | 0x0080) - 256);
@@ -124,7 +132,7 @@ bool JsonObject::parseEtc(JsonObject* jsonObject, const std::string& jsonText, s
 }
 
 bool JsonObject::parseString(JsonObject* jsonObject, const std::string& jsonText, std::size_t& startPosition) {
-    std::stringstream parsedString;
+    std::ostringstream parsedStringSteam;
     if (jsonText[startPosition] == '"')
         startPosition++;
     while (jsonText[startPosition] != '"' && startPosition < jsonText.size()) {
@@ -135,20 +143,20 @@ bool JsonObject::parseString(JsonObject* jsonObject, const std::string& jsonText
             if (jsonText[startPosition] == 'u') { // It is an Unicode Character
                 if (startPosition + 4 >= jsonText.size())
                     break;
-                parsedString << unicodeToU8String(jsonText.substr(startPosition + 1, 4));
+                parsedStringSteam << unicodeToU8String(jsonText.substr(startPosition + 1, 4));
                 startPosition += 4;
             }
             else
-                parsedString << parseEscapeCharacter(jsonText[startPosition]);
+                parsedStringSteam << parseEscapeCharacter(jsonText[startPosition]);
         }
         else {
-            parsedString << jsonText[startPosition];
+            parsedStringSteam << jsonText[startPosition];
         }
         startPosition++;
     }
     startPosition++;
     jsonObject->_type = ObjType::STR;
-    jsonObject->_ptr._str = new std::string(parsedString.str());
+    jsonObject->_ptr._str = new std::string(parsedStringSteam.str());
     return true;
 }
 
@@ -158,7 +166,7 @@ bool JsonObject::parseList(JsonObject* jsonObject, const std::string& jsonText, 
     if (jsonText[startPosition] == '[')
         startPosition++;
     startPosition = jsonText.find_first_not_of(" \r\n\t", startPosition);
-    while (jsonText[startPosition] != ']' && startPosition < jsonText.size()) {
+    while (startPosition < jsonText.size()) {
         JsonObject* newItem = new JsonObject();
         newItem->parse(jsonText, startPosition);
         jsonObject->_ptr._list->emplace_back(newItem);
@@ -166,11 +174,14 @@ bool JsonObject::parseList(JsonObject* jsonObject, const std::string& jsonText, 
         if (jsonText[startPosition] == ',') {
             startPosition++;
         }
+        else if (jsonText[startPosition] == ']') {
+            startPosition++;
+            return true;
+        }
         else {
             return false;
         }
     }
-    startPosition++;
     return true;
 }
 
@@ -180,7 +191,7 @@ bool JsonObject::parseDict(JsonObject* jsonObject, const std::string& jsonText, 
     if (jsonText[startPosition] == '{')
         startPosition++;
     startPosition = jsonText.find_first_not_of(" \r\n\t", startPosition);
-    while (jsonText[startPosition] != '}' && startPosition < jsonText.size()) {
+    while (startPosition < jsonText.size()) {
         JsonObject* newItemKey = new JsonObject();
         JsonObject* newItemValue = new JsonObject();
         newItemKey->parse(jsonText, startPosition);
@@ -200,11 +211,111 @@ bool JsonObject::parseDict(JsonObject* jsonObject, const std::string& jsonText, 
         if (jsonText[startPosition] == ',') {
             startPosition++;
         }
+        else if (jsonText[startPosition] == '}') {
+            startPosition++;
+            return true;
+        }
         else {
             return false;
         }
     }
-    startPosition++;
+    return true;
+}
+
+bool JsonObject::format(const JsonObject& jsonObject, std::ostream& jsonStream, int floor, const int& indent, const bool& ensureAscii) {
+    switch (jsonObject._type) {
+    case ObjType::INT:
+        jsonStream << *jsonObject._ptr._int;
+        break;
+    case ObjType::BOOL:
+        jsonStream << std::boolalpha << *jsonObject._ptr._bool << std::noboolalpha;
+        break;
+    case ObjType::STR:
+        jsonStream << '"';
+        for (const char& c : *jsonObject._ptr._str) {
+            switch (c) {
+            case '"':
+                jsonStream << "\\\"";
+                break;
+            case '\\':
+                jsonStream << "\\\\";
+                break;
+            case '\b':
+                jsonStream << "\\b";
+                break;
+            case '\f':
+                jsonStream << "\\f";
+                break;
+            case '\n':
+                jsonStream << "\\n";
+                break;
+            case '\r':
+                jsonStream << "\\r";
+                break;
+            case '\t':
+                jsonStream << "\\t";
+                break;
+            default:
+                jsonStream << c;
+                break;
+            }
+        }
+        jsonStream << '"';
+        break;
+    case ObjType::DOUBLE:
+        jsonStream << *jsonObject._ptr._double;
+        break;
+    case ObjType::LIST: {
+        jsonStream << '[';
+        if (indent >= 0)
+            jsonStream << '\n';
+        std::list<JsonObject*>::iterator listIterator = jsonObject._ptr._list->begin();
+        while (listIterator != --jsonObject._ptr._list->end()) {
+            addIndent(jsonStream, floor + 1, indent);
+            format(**listIterator, jsonStream, floor + 1, indent, ensureAscii);
+            jsonStream << ',';
+            jsonStream << (indent >= 0 ? '\n' : ' ');
+            listIterator++;
+        }
+        addIndent(jsonStream, floor + 1, indent);
+        format(**listIterator, jsonStream, floor + 1, indent, ensureAscii);
+        if (indent >= 0)
+            jsonStream << '\n';
+        break;
+        addIndent(jsonStream, floor, indent);
+        jsonStream << '[';
+    }
+    case ObjType::DICT: {
+        jsonStream << '{';
+        if (indent >= 0)
+            jsonStream << '\n';
+        std::list<std::pair<JsonObject*, JsonObject*>>::iterator dictIterator = jsonObject._ptr._dict->begin();
+        while (dictIterator != --jsonObject._ptr._dict->end()) {
+            addIndent(jsonStream, floor + 1, indent);
+            format(*(*dictIterator).first, jsonStream, floor + 1, indent, ensureAscii);
+            jsonStream << ": ";
+            format(*(*dictIterator).second, jsonStream, floor + 1, indent, ensureAscii);
+            jsonStream << ',';
+            jsonStream << (indent >= 0 ? '\n' : ' ');
+            dictIterator++;
+        }
+        addIndent(jsonStream, floor + 1, indent);
+        format(*(*dictIterator).first, jsonStream, floor + 1, indent, ensureAscii);
+        jsonStream << ": ";
+        format(*(*dictIterator).second, jsonStream, floor + 1, indent, ensureAscii);
+        if (indent >= 0)
+            jsonStream << "\n";
+        addIndent(jsonStream, floor, indent);
+        jsonStream << '}';
+        break;
+    }
+    case ObjType::NUL:
+        jsonStream << "null";
+        break;
+    default:
+        return false;
+        break;
+    }
     return true;
 }
 
@@ -480,7 +591,7 @@ JsonObject& JsonObject::loads(const std::string& jsonText) {
 
 JsonObject& JsonObject::load(const std::string& jsonFile) {
     std::ifstream jsonFileStream(jsonFile, std::ios::in);
-    std::stringstream jsonTextStringStream;
+    std::ostringstream jsonTextStringStream;
     std::string jsonTextTemp;
     while (!jsonFileStream.eof()) {
         std::getline(jsonFileStream, jsonTextTemp);
@@ -489,59 +600,17 @@ JsonObject& JsonObject::load(const std::string& jsonFile) {
     return *(new JsonObject(jsonTextStringStream.str()));
 }
 
-std::string JsonObject::dumps(const JsonObject& jsonObject) {
-    std::stringstream jsonStringStream;
-    switch (jsonObject._type) {
-    case ObjType::INT:
-        jsonStringStream << *jsonObject._ptr._int;
-        break;
-    case ObjType::BOOL:
-        jsonStringStream << *jsonObject._ptr._bool ? "true" : "false";
-        break;
-    case ObjType::STR:
-        jsonStringStream << '"';
-        for (const char& c : *jsonObject._ptr._str) {
-            switch (c) {
-            case '"':
-                jsonStringStream << "\\\"";
-                break;
-            case '\\':
-                jsonStringStream << "\\\\";
-                break;
-            case '\b':
-                jsonStringStream << "\\b";
-                break;
-            case '\f':
-                jsonStringStream << "\\f";
-                break;
-            case '\n':
-                jsonStringStream << "\\n";
-                break;
-            case '\r':
-                jsonStringStream << "\\r";
-                break;
-            case '\t':
-                jsonStringStream << "\\t";
-                break;
-
-            default:
-                jsonStringStream << c;
-                break;
-            }
-        }
-        break;
-    case ObjType::DOUBLE:
-        jsonStringStream << *jsonObject._ptr._double;
-        break;
-    case ObjType::LIST:
-        jsonStringStream << '[';
-    default:
-        break;
-    }
+std::string JsonObject::dumps(const JsonObject& jsonObject, int indent = -1, bool ensureAscii = false) {
+    std::ostringstream jsonStringStream;
+    format(jsonObject, jsonStringStream, 0, indent, ensureAscii);
     return jsonStringStream.str();
 }
 
-bool JsonObject::dump(const std::string& fileName, const JsonObject& jsonObject) {
+bool JsonObject::dump(const std::string& fileName, const JsonObject& jsonObject, int indent = -1, bool ensureAscii = false) {
+    std::ofstream jsonFsteam(fileName, std::ios::out | std::ios::trunc | std::ios::binary);
+    if (jsonFsteam.bad())
+        return false;
+    format(jsonObject, jsonFsteam, 0, indent, ensureAscii);
     return true;
 }
 
