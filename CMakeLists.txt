@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
-string(REGEX REPLACE ".*/(.*)" "\\1" CURRENT_FOLDER ${CMAKE_SOURCE_DIR})
-project(${CURRENT_FOLDER})
-file(GLOB SOURCE_FILES "${PROJECT_SOURCE_DIR}/src/*.cpp")
-add_executable(${CURRENT_FOLDER} ${SOURCE_FILES})
-target_include_directories(${CURRENT_FOLDER} PRIVATE ${PROJECT_SOURCE_DIR}/include)
-set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++ -static")
+project(jsonObject)
+add_library(jsonObject STATIC src/JsonObject.cpp)
+target_include_directories(jsonObject PUBLIC ${PROJECT_SOURCE_DIR}/include)
+
+add_executable(test src/test.cpp)
+target_link_libraries(test PRIVATE jsonObject)

@@ -32,6 +32,8 @@ int main(int argc, char const* argv[]) {
     }
 }
 )+*+*"_json;
-    std::cout << JsonObject::dump("output.json", a, -1, false);
+    std::cout << JsonObject::dumps(a, -1, false);
+    a["widget"]["image"]["hOffset"] = 999;
+    std::cout << JsonObject::dumps(a, -1, false);
     return 0;
 }
