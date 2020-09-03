@@ -1,5 +1,4 @@
 #include "JsonObject.hpp"
-#include <iostream>
 
 void JsonObject::addIndent(std::ostream& jsonStream, const int& floor, const int& indent) {
     if (indent < 0)
