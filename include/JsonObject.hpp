@@ -31,6 +31,7 @@ protected:
     static inline std::size_t countCharacter(const std::string&, std::size_t);
     static inline char parseEscapeCharacter(const char&);
     static inline std::string unicodeToU8String(const std::string&);
+    static inline std::string u8StringToUnicode(const std::string&);
     bool parse(const std::string&, std::size_t&);
     static bool parseNumber(JsonObject*, const std::string&, std::size_t&);
     static bool parseEtc(JsonObject*, const std::string&, std::size_t&);

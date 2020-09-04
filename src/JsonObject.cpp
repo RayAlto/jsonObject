@@ -1,10 +1,11 @@
 #include "JsonObject.hpp"
+#include <iostream>
 
 void JsonObject::addIndent(std::ostream& jsonStream, const int& floor, const int& indent) {
     if (indent < 0)
         return;
-    for (size_t i = 0; i < floor; i++)
-        for (size_t j = 0; j < indent; j++)
+    for (std::size_t i = 0; i < floor; i++)
+        for (std::size_t j = 0; j < indent; j++)
             jsonStream << ' ';
 }
 
@@ -61,6 +62,16 @@ std::string JsonObject::unicodeToU8String(const std::string& unicodeDigits) {
     u8StringStream << char((((order & 0x0FC0) >> 6) | 0x0080) - 256);
     u8StringStream << char(((order & 0x003F) | 0x0080) - 256);
     return u8StringStream.str();
+}
+
+std::string JsonObject::u8StringToUnicode(const std::string& u8String) {
+    std::ostringstream unicodeStream;
+    int order = 0;
+    order |= ((u8String[2] + 256) & 0x003F);
+    order |= (((u8String[1] + 256) & 0x003F) << 6);
+    order |= (((u8String[0] + 256) & 0x000F) << 12);
+    unicodeStream << std::hex << order;
+    return "\\u" + unicodeStream.str();
 }
 
 bool JsonObject::parse(const std::string& jsonText, std::size_t& startPosition) {
@@ -229,10 +240,16 @@ bool JsonObject::format(const JsonObject& jsonObject, std::ostream& jsonStream, 
     case ObjType::BOOL:
         jsonStream << std::boolalpha << *jsonObject._ptr._bool << std::noboolalpha;
         break;
-    case ObjType::STR:
+    case ObjType::STR: {
         jsonStream << '"';
-        for (const char& c : *jsonObject._ptr._str) {
-            switch (c) {
+        const std::string& jsonString = *jsonObject._ptr._str;
+        for (size_t i = 0; i < jsonString.size(); i++) {
+            if (ensureAscii && (jsonString[i] < 0)) {
+                jsonStream << u8StringToUnicode(jsonString.substr(i, 3));
+                i += 2;
+                continue;
+            }
+            switch (jsonString[i]) {
             case '"':
                 jsonStream << "\\\"";
                 break;
@@ -255,12 +272,13 @@ bool JsonObject::format(const JsonObject& jsonObject, std::ostream& jsonStream, 
                 jsonStream << "\\t";
                 break;
             default:
-                jsonStream << c;
+                jsonStream << jsonString[i];
                 break;
             }
         }
         jsonStream << '"';
         break;
+    }
     case ObjType::DOUBLE:
         jsonStream << *jsonObject._ptr._double;
         break;

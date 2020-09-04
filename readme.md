@@ -202,6 +202,32 @@ int widgetTextSize = json["widget"]["text"]["size"].toInt();
 
 ---
 
+### 1.5. Output a JsonObject
+
+There is `dump()`/`dumps()` like Python, you can use it like:
+
+```c++
+auto json = JsonObject::load("config/user.json");
+
+// ... Some modify?
+
+// To file
+JsonObject::dump("config/user.json", json, 4, false);
+
+// As a string
+std::string jsonString = JsonObject::dumps(json, 4, false);
+```
+
+#### Ensure Ascii
+
+Same as Python, the fourth parameter of `dump()` and the third parameter fo `dumps()` can be set to ensure that the output characters are all ASCII character
+
+If `ensureAscii` is set to true, All Unicode character will be output as `\uXXXX`
+
+> Attension: `toString()` can only be used in string type objects to get a copy of its string!
+
+---
+
 ### 1.4. Some operations related to dict/list/string
 
 There is currently some operations related to dict/list/string, which corresponds to stl container.

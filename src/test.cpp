@@ -5,7 +5,7 @@ int main(int argc, char const* argv[]) {
     JsonObject a = R"+*+*(
 {
     "widget": {
-        "debug": "on",
+        "debug": "我abc是~\t456傻逼",
         "window": {
             "title": "Sample Konfabulator Widget",
             "name": "main_window",
@@ -32,8 +32,6 @@ int main(int argc, char const* argv[]) {
     }
 }
 )+*+*"_json;
-    std::cout << JsonObject::dumps(a, -1, false);
-    a["widget"]["image"]["hOffset"] = 999;
-    std::cout << JsonObject::dumps(a, -1, false);
+    std::cout << JsonObject::dumps(JsonObject::loads(JsonObject::dumps(a, 4, true)), 4, true) << std::endl;
     return 0;
 }
