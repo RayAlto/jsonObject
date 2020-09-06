@@ -9,9 +9,10 @@
 #include <list>
 
 class JsonObject {
-private:
+public:
     enum class ObjType : uint8_t { ERROR, INT, BOOL, STR, DOUBLE, NUL, LIST, DICT };
 
+private:
     union ObjPtr {
         int* _int;
         bool* _bool;
@@ -48,7 +49,7 @@ public:
     JsonObject();
     JsonObject(const JsonObject&);
     JsonObject(const std::string&);
-    std::string type() const;
+    ObjType type() const;
     int toInt() const;
     bool toBool() const;
     std::string toString() const;

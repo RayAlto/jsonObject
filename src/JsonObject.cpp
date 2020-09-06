@@ -1,5 +1,4 @@
 #include "JsonObject.hpp"
-#include <iostream>
 
 void JsonObject::addIndent(std::ostream& jsonStream, const int& floor, const int& indent) {
     if (indent < 0)
@@ -424,24 +423,8 @@ JsonObject::JsonObject(const std::string& jsonText) : JsonObject() {
     parse(jsonText, position);
 }
 
-std::string JsonObject::type() const {
-    switch (_type) {
-    case ObjType::INT:
-        return "int";
-    case ObjType::BOOL:
-        return "bool";
-    case ObjType::STR:
-        return "string";
-    case ObjType::DOUBLE:
-        return "double";
-    case ObjType::LIST:
-        return "list";
-    case ObjType::DICT:
-        return "dict";
-    case ObjType::NUL:
-        return "null";
-    }
-    return "";
+JsonObject::ObjType JsonObject::type() const {
+    return _type;
 }
 
 int JsonObject::toInt() const {
